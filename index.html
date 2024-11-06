@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialog Path</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body, html { height: 100%; margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #container { display: flex; flex-direction: column; align-items: center; }
+        .button { background-color: orange; padding: 10px 15px; color: white; margin: 10px; border: none; cursor: pointer; }
+        .upload-section { margin-top: 20px; }
+        .navigation-section { margin-top: 20px; display: none; }
+        .config-section { 
+            margin-top: 20px; 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr); 
+            gap: 20px; 
+            display: none; 
+        }
+        #text-container { margin-top: 30px; margin-left: 10%; margin-right: 10%; font-family: 'Montserrat', sans-serif; text-align: center; }
+        label { font-family: 'Montserrat', sans-serif; margin-right: 10px; }
+        .config-section > div {
+            background-color: #f0f0f0; /* Optional: give each grid cell a background color */
+            padding: 20px; /* Optional: add padding */
+            border: 1px solid #ccc; /* Optional: add a border */
+            border-radius: 5px; /* Optional: round the corners */
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h2 style="font-family: 'Montserrat', sans-serif; color: orange;">Dialog Path</h2>
+
+        <div id="text-container">
+            <p>"Dialog Flow Visualization" is a tool for visualizing dialogue flows through graphs, facilitating the interpretation of dialogue datasets.</p>
+            <p>The format of dialog datasets read by this tool is .tsv, with the columns separated by tabs, structured similarly to this:</p>
+            <img src="tsvexample.jpg" width="40%" height="70%">
+        </div>
+
+        <div class="upload-section" id="upload-section">
+            <button class="button" onclick="document.getElementById('fileInput').click()">Upload TSV File</button>
+            <input type="file" id="fileInput" accept=".tsv" style="display: none;" onchange="handleFileUpload(event)">
+        </div>
+
+        <div class="config-section" id="config-section">
+            <div>
+                <label for="nodeColor">Node Color</label>
+                <br>
+                <select id="nodeColor">
+                    <option value="">Select a column...</option>
+                </select>
+                <br>
+            </div>
+            <div>
+                <label for="nodeGroup">Node Group</label>
+                <br>
+                <select id="nodeGroup">
+                    <option value="">Select a column...</option>
+                </select>
+                <br>
+            </div>
+        
+            <div>
+                <label for="linesToRead">Number of Dataset Lines to Read:</label>
+                <br>
+                <input type="number" id="linesToRead" min="1" placeholder="Enter a number">
+            </div>
+        </div>
+
+        <!-- Navigation section (hidden until settings are filled in) -->
+        <div class="navigation-section" id="navigation-section">
+            <button class="button" id="go-to-graph">Go to Graph Visualization</button>
+            <button class="button" id="go-to-sankey">Go to Sankey Diagram</button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('upload-section');
+        const textContainer = document.getElementById('text-container');
+        const configSection = document.getElementById('config-section');
+        const navigationSection = document.getElementById('navigation-section');
+        const nodeDropdowns = [
+            document.getElementById('nodeColor'),
+            document.getElementById('nodeGroup')
+        ];
+
+        let fileData;
+        let tsvColumns = [];
+
+        fileInput.addEventListener('change', handleFileUpload);
+        document.getElementById('go-to-graph').addEventListener('click', () => navigateTo('graph_based_v24.html'));
+        document.getElementById('go-to-sankey').addEventListener('click', () => navigateTo('sankey_diagram_v13.html'));
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileData = e.target.result;
+                storeData();
+                parseTSVColumns(fileData); 
+                showConfigSection();  
+            };
+            reader.readAsText(file);
+        }
+
+        function storeData() {
+            try {
+                const fileSizeInBytes = new Blob([fileData]).size;
+
+                const fileSizeInMB = fileSizeInBytes / (1024 * 1024); 
+
+                if (fileSizeInMB > 5) {
+                    alert(`The file size is ${fileSizeInMB.toFixed(2)}MB, which exceeds the usual 5MB localStorage limit. Upload a smallet file please.`);
+                    return; 
+                }
+
+                localStorage.setItem('tsvFile', fileData);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    alert('Error: The file is too large to be stored in localStorage. Please try using a smaller file.');
+                } else {
+                    console.error('Error storing file data:', e);
+                }
+            }
+        }
+
+        function parseTSVColumns(data) {
+            const firstLine = data.split("\n")[0]; 
+            tsvColumns = firstLine.split("\t");  
+            populateNodeColorDropdown(tsvColumns); 
+        }
+
+        function populateNodeColorDropdown(columns) {
+            nodeDropdowns.forEach(dropdown => {
+                dropdown.innerHTML = '<option value="">Select a column...</option>'; 
+                columns.forEach((col, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;  
+                    option.textContent = col;
+                    dropdown.appendChild(option);
+                });
+            });
+        }
+
+        function showConfigSection() {
+            configSection.style.display = 'grid';   
+            uploadSection.style.display = 'none';   
+            textContainer.style.display = 'none';   
+            navigationSection.style.display = 'none';  
+            configSection.style.display = 'grid';   
+        }
+
+        nodeDropdowns.forEach(dropdown => {
+            dropdown.addEventListener('change', checkConfigFilled);
+        });
+        document.getElementById('linesToRead').addEventListener('input', checkConfigFilled);
+
+        function checkConfigFilled() {
+            const numberOfLines = document.getElementById('linesToRead').value;
+
+            if (nodeDropdowns.every(dropdown => dropdown.value) && numberOfLines) {
+                localStorage.setItem('nodeColumns', JSON.stringify(nodeDropdowns.map(dropdown => parseInt(dropdown.value)))); 
+                localStorage.setItem('lineLimit', numberOfLines);  
+
+                localStorage.setItem('selectedNodeColor', parseInt(nodeDropdowns[0].value)); 
+                localStorage.setItem('selectedNodeMeaning', parseInt(nodeDropdowns[1].value)); 
+                navigationSection.style.display = 'block'; 
+            } else {
+                navigationSection.style.display = 'none';  
+            }
+        }
+
+        function navigateTo(page) {
+            if (!fileData) {
+                alert('Please upload a file first!');
+                return;
+            }
+            storeData();
+            window.location.href = page;
+        }
+    </script>
+</body>
+</html>

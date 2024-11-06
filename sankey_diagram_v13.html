@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Dialog Path - Sankey Diagram</title>
+<style>
+
+body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+
+        #opening-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+       
+        #main-content {
+            display: none;
+        }
+
+        #header {
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        
+        #help-dropdown {
+            display: none; 
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+        }
+
+        #dialogue-id-dropdown option:hover {
+            background-color: lightgray;
+        }
+        
+        #dialogue-id-dropdown option:checked {
+            background-color: lightblue;
+        }
+
+  .node rect {
+    cursor: move;
+    fill-opacity: .9;
+    shape-rendering: crispEdges;
+  }
+  .node text {
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff;
+    font-size: 14px;
+  }
+  .link {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .2;
+  }
+  .link.highlighted {
+    stroke-opacity: .8;
+    stroke: rgb(17, 0, 255); 
+  }
+  .link:hover {
+    stroke-opacity: .5;
+  }
+
+  .upload-button {
+      background-color: orange;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 17px;
+      border-radius: 5px;
+      text-align: center;
+  }
+
+  .svg-container {
+    width: 50%;
+    position: relative;
+    margin-top: 60px; 
+    margin-bottom: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 30px;
+    padding-right: 30px;
+    overflow-x: auto;
+}
+.svg{
+  padding-top: 5%;
+}
+
+  .buttons-container {
+      width: 200px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex;
+      margin-right: 50px;
+  }
+
+  .dataset-container {
+      width: 250px;
+      padding: 20px;
+      margin-left: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex;
+      color: black;
+  }
+
+  .search-container {
+      margin-bottom: 20px;
+  }
+
+  .dropdown {
+      position: relative;
+      display: inline-block;
+      overflow-y: auto; 
+      max-height: 200px;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fff;
+  }
+
+  .search-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+  }
+
+  .dialogues-button {
+      background-color: orange;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      text-align: center;
+  }
+
+  .column-titles-container {
+    display: flex;
+    position: absolute; 
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
+.column-title {
+    flex: 1;
+    text-align: center;
+    padding-right: 7%;
+    font-weight: bold;
+    font-size: 90%;
+    color: black;
+    margin-bottom: 20px; 
+}
+
+  .button {
+      margin-bottom: 10px;
+      margin-right: 10px;
+      padding: 8px 12px;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      text-align: center;
+  }
+
+  .button-dropdown {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border: none;
+      color: black;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 5px;
+      text-align: center;
+  }
+
+  .button-orange {
+      background-color: orange;
+  }
+
+  
+  .button-gray {
+      background-color: gray;
+      color: black;
+  }
+
+</style>
+<body>
+  
+<div id="main-content" style="display:none;">
+
+  <div id="container">
+    <div class="dataset-container">
+        <input type="file" id="fileInput" accept=".tsv" style="display: none;">
+        <button class="upload-button" onclick="window.location.href='graph_based_v24.html'">Change to Graph</button>
+        <button class="dialogues-button">Dialogues</button>
+        <div class="search-container">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search dialogues...">
+      </div>
+        <div class="dropdown" style="margin-top: 20px;">
+          <div id="dialogue-id-dropdown" class="dropdown-content"></div>
+        </div>
+      <div id="associated-content" style="height: 210px; overflow-y: scroll;"></div>  
+    </div>
+
+    <div class="svg-container">
+      <div id="column-titles" class="column-titles-container" ></div>
+      <svg class="svg"></svg>
+  </div>
+  <div class="buttons-container">
+    <button class="button button-orange" id="screenshot-button">Take Screenshot</button>
+    <button class="button button-orange" id="dialogue-acts-button">Node Groups</button>
+    <div id="dialogue-acts-dropdown" class="dropdown"></div>
+    <button class="button button-orange" id="sentiments-button">Color Labels</button>
+    <div id="sentiments-dropdown" class="dropdown"></div>
+    <button class="button button-orange" id="help-button">Help</button>
+    <div id="help-dropdown" style="display: none; height: 300px; overflow-y: auto;">
+        <ul>
+            <li>The nodes represent the dialogue acts of the messages in the dataset dialogues.</li>
+            <li>The links between nodes represent the percentage flow of the dialogues between the dialogue acts.</li>
+            <li>The node size represents the number of occurrences of each dialogue act.</li>
+            <li>The node colors represent the highest percentage of sentiments for each dialogue act.</li>
+        </ul>
+    </div>
+</div>   
+</div>
+</div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+    let line_lim; 
+    let columnId;
+    let columnNum;
+    let columnMes;
+    let colorColIndex;
+    let nodeColIndex;
+    
+document.addEventListener('DOMContentLoaded', function() {
+    const fileData = localStorage.getItem('tsvFile');
+    line_lim = Math.min(localStorage.getItem('lineLimit') ? parseInt(localStorage.getItem('lineLimit')) : 3001, 150);
+
+    const selectedNodeColor = localStorage.getItem('selectedNodeColor');  
+    const selectedNodeMeaning = localStorage.getItem('selectedNodeMeaning');  
+
+    columnCol = selectedNodeColor ? parseInt(selectedNodeColor) : 4;   
+    columnNod = selectedNodeMeaning ? parseInt(selectedNodeMeaning) : 4;  
+
+    if (fileData) {
+        const lines = fileData.split("\n").slice(0, line_lim);
+        const limitedData = lines.join("\n");
+        const firstLineColumns = lines[0].split("\t");
+        
+        if (firstLineColumns.length < 5) {
+            alert("The TSV file is missing columns. It should have at least five. The current columns are: " + lines[0]);
+            return;
+        }
+        columnId = firstLineColumns[0];  
+        columnNum = firstLineColumns[1];  
+        columnMes = firstLineColumns[2];  
+        nodeColIndex = firstLineColumns[columnNod];  
+        colorColIndex = firstLineColumns[columnCol];  
+
+
+        console.log("First cell of the first line: ", columnId);
+
+        processData(limitedData);
+        document.getElementById('main-content').style.display = 'block';
+    } else {
+        alert("No TSV file found. Please upload a file from the main page.");
+    }
+});
+
+
+
+
+function processData(data) {
+
+  
+
+  d3.sankey = function() {
+  var sankey = {},
+      nodeWidth = 24,
+      nodePadding = 8,
+      size = [1, 1],
+      nodes = [],
+      links = [];
+
+  sankey.nodeWidth = function(_) {
+    if (!arguments.length) return nodeWidth;
+    nodeWidth = +_;
+    return sankey;
+  };
+
+  sankey.nodePadding = function(_) {
+    if (!arguments.length) return nodePadding;
+    nodePadding = +_;
+    return sankey;
+  };
+
+  sankey.nodes = function(_) {
+    if (!arguments.length) return nodes;
+    nodes = _;
+    return sankey;
+  };
+
+  sankey.links = function(_) {
+    if (!arguments.length) return links;
+    links = _;
+    return sankey;
+  };
+
+  sankey.size = function(_) {
+    if (!arguments.length) return size;
+    size = _;
+    return sankey;
+  };
+
+  sankey.layout = function(iterations) {
+    computeNodeLinks();
+    computeNodeValues();
+    computeNodeBreadths();
+    computeNodeDepths(iterations);
+    computeLinkDepths();
+    return sankey;
+  };
+
+  sankey.relayout = function() {
+    computeLinkDepths();
+    return sankey;
+  };
+
+  sankey.link = function() {
+    var curvature = .5;
+
+    function link(d) {
+      var x0 = d.source.x + d.source.dx,
+          x1 = d.target.x,
+          xi = d3.interpolateNumber(x0, x1),
+          x2 = xi(curvature),
+          x3 = xi(1 - curvature),
+          y0 = d.source.y + d.sy + d.dy / 2,
+          y1 = d.target.y + d.ty + d.dy / 2;
+      return "M" + x0 + "," + y0
+           + "C" + x2 + "," + y0
+           + " " + x3 + "," + y1
+           + " " + x1 + "," + y1;
+    }
+
+    link.curvature = function(_) {
+      if (!arguments.length) return curvature;
+      curvature = +_;
+      return link;
+    };
+
+    return link;
+  };
+
+  function computeNodeLinks() {
+    nodes.forEach(function(node) {
+      node.sourceLinks = [];
+      node.targetLinks = [];
+    });
+    links.forEach(function(link) {
+      var source = link.source,
+          target = link.target;
+      if (typeof source === "number") source = link.source = nodes[link.source];
+      if (typeof target === "number") target = link.target = nodes[link.target];
+      source.sourceLinks.push(link);
+      target.targetLinks.push(link);
+    });
+  }
+
+  function computeNodeValues() {
+    nodes.forEach(function(node) {
+      node.value = Math.max(
+        d3.sum(node.sourceLinks, value),
+        d3.sum(node.targetLinks, value)
+      );
+    });
+  }
+
+  function computeNodeBreadths() {
+    var remainingNodes = nodes,
+        nextNodes,
+        x = 0;
+
+    while (remainingNodes.length) {
+        nextNodes = [];
+        remainingNodes.forEach(function(node) {
+            node.x = node.column !== undefined ? node.column : x;
+            node.dx = nodeWidth;
+            node.sourceLinks.forEach(function(link) {
+                if (nextNodes.indexOf(link.target) < 0) {
+                    nextNodes.push(link.target);
+                }
+            });
+        });
+        remainingNodes = nextNodes;
+        ++x;
+    }
+
+    scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
+}
+
+  function moveSourcesRight() {
+    nodes.forEach(function(node) {
+      if (!node.targetLinks.length) {
+        node.x = d3.min(node.sourceLinks, function(d) { return d.target.x; }) - 1;
+      }
+    });
+  }
+
+  function moveSinksRight(x) {
+    nodes.forEach(function(node) {
+      if (!node.sourceLinks.length) {
+        node.x = x - 1;
+      }
+    });
+  }
+
+  function scaleNodeBreadths(kx) {
+    nodes.forEach(function(node) {
+      node.x *= kx;
+    });
+  }
+
+  function computeNodeDepths(iterations) {
+    var nodesByBreadth = d3.nest()
+        .key(function(d) { return d.x; })
+        .sortKeys(d3.ascending)
+        .entries(nodes)
+        .map(function(d) { return d.values; });
+
+    initializeNodeDepth();
+    resolveCollisions();
+    for (var alpha = 1; iterations > 0; --iterations) {
+      relaxRightToLeft(alpha *= .99);
+      resolveCollisions();
+      relaxLeftToRight(alpha);
+      resolveCollisions();
+    }
+
+    function initializeNodeDepth() {
+      var ky = d3.min(nodesByBreadth, function(nodes) {
+        return (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value);
+      });
+
+      nodesByBreadth.forEach(function(nodes) {
+        nodes.forEach(function(node, i) {
+          node.y = i;
+          node.dy = node.value * ky;
+        });
+      });
+
+      links.forEach(function(link) {
+        link.dy = link.value * ky;
+      });
+    }
+
+    function relaxLeftToRight(alpha) {
+      nodesByBreadth.forEach(function(nodes, breadth) {
+        nodes.forEach(function(node) {
+          if (node.targetLinks.length) {
+            var y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
+            node.y += (y - center(node)) * alpha;
+          }
+        });
+      });
+
+      function weightedSource(link) {
+        return center(link.source) * link.value;
+      }
+    }
+
+    function relaxRightToLeft(alpha) {
+      nodesByBreadth.slice().reverse().forEach(function(nodes) {
+        nodes.forEach(function(node) {
+          if (node.sourceLinks.length) {
+            var y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
+            node.y += (y - center(node)) * alpha;
+          }
+        });
+      });
+
+      function weightedTarget(link) {
+        return center(link.target) * link.value;
+      }
+    }
+
+    function resolveCollisions() {
+      nodesByBreadth.forEach(function(nodes) {
+        var node,
+            dy,
+            y0 = 0,
+            n = nodes.length,
+            i;
+
+        nodes.sort(ascendingDepth);
+        for (i = 0; i < n; ++i) {
+          node = nodes[i];
+          dy = y0 - node.y;
+          if (dy > 0) node.y += dy;
+          y0 = node.y + node.dy + nodePadding;
+        }
+
+        dy = y0 - nodePadding - size[1];
+        if (dy > 0) {
+          y0 = node.y -= dy;
+
+          for (i = n - 2; i >= 0; --i) {
+            node = nodes[i];
+            dy = node.y + node.dy + nodePadding - y0;
+            if (dy > 0) node.y -= dy;
+            y0 = node.y;
+          }
+        }
+      });
+    }
+
+    function ascendingDepth(a, b) {
+      return a.y - b.y;
+    }
+  }
+
+  function computeLinkDepths() {
+    nodes.forEach(function(node) {
+      node.sourceLinks.sort(ascendingTargetDepth);
+      node.targetLinks.sort(ascendingSourceDepth);
+    });
+    nodes.forEach(function(node) {
+      var sy = 0, ty = 0;
+      node.sourceLinks.forEach(function(link) {
+        link.sy = sy;
+        sy += link.dy;
+      });
+      node.targetLinks.forEach(function(link) {
+        link.ty = ty;
+        ty += link.dy;
+      });
+    });
+
+    function ascendingSourceDepth(a, b) {
+      return a.source.y - b.source.y;
+    }
+
+    function ascendingTargetDepth(a, b) {
+      return a.target.y - b.target.y;
+    }
+  }
+
+  function center(node) {
+    return node.y + node.dy / 2;
+  }
+
+  function value(link) {
+    return link.value;
+  }
+
+  return sankey;
+};
+
+
+
+const searchInput = document.getElementById('searchInput');
+
+
+searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.trim().toLowerCase();
+    const options = dropdown.getElementsByTagName('option');
+
+    for (let i = 0; i < options.length; i++) {
+        const optionText = options[i].textContent.trim().toLowerCase();
+        if (optionText.includes(searchTerm)) {
+            options[i].style.display = 'block';
+        } else {
+            options[i].style.display = 'none';
+        }
+    }
+});
+//change
+
+const tsvData = d3.tsvParse(data);
+
+var margin = { top: 1, right: 1, bottom: 6, left: 1 },
+    width = 950 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+var formatNumber = d3.format(",.0f"),
+    format = function (d) { return formatNumber(d); },
+    color = d3.scaleOrdinal(d3.schemeCategory20);
+
+var svg = d3.select("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var sankey = d3.sankey()
+    .nodeWidth(36)
+    .nodePadding(40)
+    .size([width, height]);
+
+var path = sankey.link();
+
+var graph = { "nodes": [], "links": [] };
+var nodesDict = {};
+var nodeLinks = {};
+var dialogueIds = {};
+
+var startNode = { "name": "Start" };
+var endNode = { "name": "End" };
+
+var dialogues = {};
+
+tsvData.forEach(function (d) {
+    var dialogueId = d[columnId];
+    var dialogueText = "Dialogue Act: " + d[nodeColIndex] +
+                       "; Message: " + d[columnMes] +
+                       "; Emotion: " + d[colorColIndex];
+                       console.log("First cell of the first line 22: ", columnId);
+
+
+    if (!dialogues[dialogueId]) {
+        dialogues[dialogueId] = dialogueText;
+    }
+
+    var nodeName = d[nodeColIndex] + "-" + d[columnNum];
+    if (!nodesDict[nodeName]) {
+  nodesDict[nodeName] = {
+      "name": nodeName,
+      "dialogAct": d[nodeColIndex],
+      "column": +d[columnNum],
+      "value": 1,
+      "sentiments": {}  
+  };
+  graph.nodes.push(nodesDict[nodeName]);
+}
+
+var sentiment = d[colorColIndex];
+        if (!nodesDict[nodeName].sentiments[sentiment]) {
+            nodesDict[nodeName].sentiments[sentiment] = 1;
+        } else {
+            nodesDict[nodeName].sentiments[sentiment]++;
+        }
+
+    if (!dialogueIds[dialogueId]) {
+        dialogueIds[dialogueId] = [];
+    }
+    dialogueIds[dialogueId].push({
+        "nodename": d[nodeColIndex] + "-" + d[columnNum],
+        "dialogueAct": d[nodeColIndex],
+        "message": d[columnMes],
+        "sentiment": d[colorColIndex]
+    });
+});
+
+graph.nodes.forEach(function(node) {
+    var totalEmotions = d3.sum(Object.values(node.sentiments));
+    Object.keys(node.sentiments).forEach(function(sentiment) {
+        node.sentiments[sentiment] = node.sentiments[sentiment] / totalEmotions;
+    });
+});
+
+ var associatedContent = document.getElementById("associated-content");
+
+tsvData.forEach(function (d, i) {
+    var currentNode = nodesDict[d[nodeColIndex] + "-" + d[columnNum]];
+    var nextNode = tsvData[i + 1] && tsvData[i + 1][columnId] === d[columnId]
+        ? nodesDict[tsvData[i + 1][nodeColIndex] + "-" + tsvData[i + 1][columnNum]]
+        : null;
+
+    if (nextNode) {
+        if (!nodeLinks[currentNode.name]) nodeLinks[currentNode.name] = {};
+        if (!nodeLinks[currentNode.name][nextNode.name]) nodeLinks[currentNode.name][nextNode.name] = 0;
+        nodeLinks[currentNode.name][nextNode.name]++;
+    }
+});
+
+Object.keys(nodeLinks).forEach(function (source) {
+    Object.keys(nodeLinks[source]).forEach(function (target) {
+        graph.links.push({
+            "source": source,
+            "target": target,
+            "value": nodeLinks[source][target]
+        });
+    });
+});
+
+graph.nodes = graph.nodes.map((node, i) => ({ ...node, index: i }));
+graph.links.forEach(function (link) {
+    link.source = graph.nodes.find(n => n.name === link.source).index;
+    link.target = graph.nodes.find(n => n.name === link.target).index;
+});
+
+Object.keys(nodesDict).forEach(function (key) {
+    var node = nodesDict[key];
+    var sentimentCounts = {};
+    nodeLinks[key] = {};
+
+    tsvData.forEach(function (d) {
+        if (d[nodeColIndex] + "-" + d[columnNum] === key) {
+            var sentiment = d[colorColIndex];
+            if (!sentimentCounts[sentiment]) {
+                sentimentCounts[sentiment] = 1;
+            } else {
+                sentimentCounts[sentiment]++;
+            }
+        }
+    });
+});
+
+sankey.nodes(graph.nodes).links(graph.links).layout(32);
+
+var link = svg.append("g").selectAll(".link")
+    .data(graph.links)
+    .enter().append("path")
+    .attr("class", "link")
+    .attr("d", path)
+    .style("stroke-width", function (d) { return Math.max(1, d.dy); })
+    .sort(function (a, b) { return b.dy - a.dy; });
+
+link.append("title")
+    .text(function (d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+
+var sentimentColorScale = d3.scaleOrdinal()
+    .domain(["Positive", "Negative", "Neutral"])
+    .range(["green", "red", "orange"]);
+
+const predefinedColors = ['violet', 'yellow', 'purple', 'cyan', 'magenta', 'brown', 'pink'];
+let colorIndex = 0;
+
+function getRandomColor() {
+    const color = predefinedColors[colorIndex];
+    colorIndex = (colorIndex + 1) % predefinedColors.length;
+    return color;
+}
+
+var sentimentColors = {};
+
+graph.nodes.forEach(function(d) {
+    Object.keys(d.sentiments).forEach(function(sentiment) {
+        if (!(sentiment in sentimentColors)) {
+            if (sentimentColorScale.domain().includes(sentiment)) {
+                sentimentColors[sentiment] = sentimentColorScale(sentiment);
+            } else {
+                sentimentColors[sentiment] = getRandomColor();
+            }
+        }
+    });
+});
+
+var mainEmotions = {};
+graph.nodes.forEach(function(d) {
+    var maxPercentage = -1;
+    var mainEmotion = null;
+
+    Object.keys(d.sentiments).forEach(function(sentiment) {
+        var percentage = d.sentiments[sentiment];
+        if (percentage > maxPercentage) {
+            maxPercentage = percentage;
+            mainEmotion = sentiment;
+        }
+    });
+
+    if (mainEmotion) {
+        mainEmotions[mainEmotion] = {
+            color: sentimentColors[mainEmotion]
+        };
+    }
+});
+
+var node = svg.append("g").selectAll(".node")
+    .data(graph.nodes)
+    .enter().append("g")
+    .attr("class", "node")
+    .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
+    .call(d3.drag()
+        .subject(function (d) { return d; })
+        .on("start", function () { this.parentNode.appendChild(this); })
+        .on("drag", dragmove));
+
+node.append("rect")
+    .attr("height", function (d) { return d.dy; })
+    .attr("width", sankey.nodeWidth())
+    .style("fill", function (d) {
+        var maxPercentage = -1;
+        var mainEmotion = null;
+
+        Object.keys(d.sentiments).forEach(function(sentiment) {
+            var percentage = d.sentiments[sentiment];
+            if (percentage > maxPercentage) {
+                maxPercentage = percentage;
+                mainEmotion = sentiment;
+            }
+        });
+
+        return (mainEmotion && sentimentColors[mainEmotion]) ? sentimentColors[mainEmotion] : 'grey';
+    })
+    .style("stroke", function (d) {
+        var maxPercentage = -1;
+        var mainEmotion = null;
+
+        Object.keys(d.sentiments).forEach(function(sentiment) {
+            var percentage = d.sentiments[sentiment];
+            if (percentage > maxPercentage) {
+                maxPercentage = percentage;
+                mainEmotion = sentiment;
+            }
+        });
+
+        if (mainEmotion && sentimentColors[mainEmotion]) {
+            return d3.rgb(sentimentColors[mainEmotion]).darker(2);
+        } else {
+            return 'black'; 
+        }
+    });
+
+var lastDialogueNodes = new Set();
+
+var maxDialogueNumber = {};
+tsvData.forEach(function (d) {
+    if (!maxDialogueNumber[d[columnId]] || +d[columnNum] > maxDialogueNumber[d[columnId]]) {
+        maxDialogueNumber[d[columnId]] = +d[columnNum];
+    }
+});
+
+tsvData.forEach(function (d) {
+    if (+d[columnNum] === maxDialogueNumber[d[columnId]]) {
+        lastDialogueNodes.add(d[nodeColIndex] + "-" + d[columnNum]);
+    }
+});
+//change
+graph.nodes.forEach(function (node) {
+    node.isEndOfDialogue = lastDialogueNodes.has(node.name);
+});
+
+node.append("title")
+    .text(function (d) {
+        var tooltip = Object.keys(d.sentiments).map(function (sentiment) {
+            return sentiment + ": " + Math.round(d.sentiments[sentiment] * 100) + "%";
+        }).join("\n");
+
+        if (d.isEndOfDialogue) {
+            tooltip = "End of Dialogue\n" + tooltip;
+        }
+        return tooltip;
+    });
+
+node.append("text")
+    .attr("x", -6)
+    .attr("y", function (d) { return d.dy / 2; })
+    .attr("dy", ".35em")
+    .attr("text-anchor", "end")
+    .attr("transform", null)
+    .text(function (d) { return d.dialogAct; })
+    .filter(function (d) { return d.x < width / 2; })
+    .attr("x", 6 + sankey.nodeWidth())
+    .attr("text-anchor", "start");
+
+function dragmove(d) {
+    d3.select(this)
+        .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
+    sankey.relayout();
+    link.attr("d", path);
+}
+
+var dropdown = document.getElementById("dialogue-id-dropdown");
+
+Object.keys(dialogueIds).forEach(function(dialogueId) {
+    var option = document.createElement("option");
+    option.value = dialogueId;
+    option.textContent = "Dialogue ID: " + dialogueId;
+    option.addEventListener("click", function() {
+        associatedContent.innerHTML = "";
+
+        dialogueIds[dialogueId].forEach(dialogue => {
+            var dialogueText = dialogue.message + " <strong>Dialogue Act:</strong> " + dialogue.dialogueAct;
+            var p = document.createElement("p");
+            p.innerHTML = dialogueText;
+            if (mainEmotions[dialogue.sentiment]) {
+                p.style.backgroundColor = mainEmotions[dialogue.sentiment].color;
+            } else if (sentimentColors[dialogue.sentiment]) {
+                p.style.backgroundColor = sentimentColors[dialogue.sentiment];
+            }
+
+            associatedContent.appendChild(p);
+        });
+
+        var dialogueActs = new Set(dialogueIds[dialogueId].map(dial => dial.nodename));
+
+        link.classed("highlighted", function(d) {
+            return dialogueActs.has(d.source.name) && dialogueActs.has(d.target.name);
+        });
+    });
+    dropdown.appendChild(option);
+});
+
+sankey.nodes(graph.nodes).links(graph.links).layout(32);
+
+const numColumns = d3.max(graph.nodes, d => d.column) + 1;
+
+const columnTitleContainer = d3.select("#column-titles");
+
+columnTitleContainer.selectAll("*").remove();
+
+for (let i = 0; i < numColumns; i++) {
+    const xPosition = i * (sankey.nodeWidth() + sankey.nodePadding());
+    
+    columnTitleContainer.append("text")
+        .attr("x", xPosition + sankey.nodeWidth() / 2)
+        .attr("y", -10)  
+        .attr("text-anchor", "middle")
+        .text("Message " + (i + 1))
+        .attr("class", "column-title"); 
+}
+
+document.getElementById('sentiments-button').addEventListener('click', function() {
+    const dropdown = document.getElementById('sentiments-dropdown');
+    
+    if (dropdown.children.length === 0) { 
+        const sentiments = new Set();
+
+        graph.nodes.forEach(node => {
+            Object.keys(node.sentiments).forEach(sentiment => sentiments.add(sentiment));
+        });
+
+        sentiments.forEach(sentiment => {
+            const button = document.createElement('button');
+            button.textContent = sentiment;
+            button.className = 'button button-dropdown';
+            if (mainEmotions[sentiment]) {
+                button.style.backgroundColor = mainEmotions[sentiment].color;
+            } else if (sentimentColors[sentiment]) {
+                button.style.backgroundColor = sentimentColors[sentiment];
+            }
+            dropdown.appendChild(button);
+        });
+    }
+});
+
+document.getElementById('dialogue-acts-button').addEventListener('click', function() {
+    const dropdown = document.getElementById('dialogue-acts-dropdown');
+
+    dropdown.innerHTML = '';
+
+    if (dropdown.children.length === 0) { 
+        const dialogueActs = new Set();
+
+        graph.nodes.forEach(node => {
+            dialogueActs.add(node.dialogAct);
+        });
+
+        dialogueActs.forEach(dialogueAct => {
+            const button = document.createElement('button');
+            button.textContent = dialogueAct;
+            button.className = 'button button-dropdown';
+            if (mainEmotions[dialogueAct]) {
+                button.style.backgroundColor = mainEmotions[dialogueAct].color;
+            } else if (sentimentColors[dialogueAct]) {
+                button.style.backgroundColor = sentimentColors[dialogueAct];
+            }
+            dropdown.appendChild(button);
+        });
+    }
+});
+
+  const helpButton = document.getElementById("help-button");
+  const helpDropdown = document.getElementById("help-dropdown");
+
+  helpButton.addEventListener("click", function() {
+      if (helpDropdown.style.display === "none") {
+          helpDropdown.style.display = "block";
+      } else {
+          helpDropdown.style.display = "none";
+      }
+  });
+
+ 
+  function downloadSvg() {
+        const svgElement = document.querySelector("svg");
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(svgElement);
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        const svgWidth = svgElement.getAttribute("width");
+        const svgHeight = svgElement.getAttribute("height");
+        canvas.width = svgWidth;
+        canvas.height = svgHeight;
+
+        context.fillStyle = "white";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const img = new Image();
+        const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = function() {
+            context.drawImage(img, 0, 0);
+
+            const jpgLink = document.createElement("a");
+            jpgLink.href = canvas.toDataURL("image/jpeg");
+            jpgLink.download = "graph_screenshot.jpeg";
+            jpgLink.click();
+
+        };
+
+        img.src = url;
+    }
+
+    document.getElementById("screenshot-button").addEventListener("click", downloadSvg);
+
+}
+</script>
+</body>

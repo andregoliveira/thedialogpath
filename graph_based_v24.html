@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialog Path - Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/nouislider/distribute/nouislider.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+
+        #opening-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+       
+        #main-content {
+            display: none;
+        }
+
+        #header {
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #current-value {
+            display: block;
+            color: black;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        #threshold-title {
+            color: black;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #help-dropdown {
+            display: none; 
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+        }
+
+        #pieChartContainer {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .noUi-handle-lower::after,
+        .noUi-handle-upper::after {
+            content: attr(aria-valuetext);
+            position: absolute;
+            top: -30px;
+            left: -5px;
+            font-size: 12px;
+            color: black;
+            padding: 3px;
+            width: 40px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .svg-container {
+            width: 50%;
+            position: relative;
+            margin-top: 200px;
+            margin-bottom: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex;
+        }
+
+        .buttons-container {
+            width: 200px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex;
+            margin-right: 100px;
+        }
+
+        .dataset-container {
+            width: 250px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex;
+            margin-left: 80px;
+            color: black;
+        }
+
+        .id_button {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .button {
+            margin-bottom: 10px;
+            margin-right: 10px;
+            padding: 8px 12px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .button-dropdown {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border: none;
+            color: black;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .button-orange {
+            background-color: orange;
+        }
+
+        .button-gray {
+            background-color: gray;
+            color: black;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .button:last-child {
+            margin-bottom: 0;
+        }
+
+        .content {
+
+            padding-right: 10px;
+            color: black;
+            background-color: white;
+            border-radius: 5px  #ddd;
+        }
+
+        .content p {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .nodeText {
+            font-size: 12px;
+            text-anchor: middle;
+            fill: #000000;
+        }
+
+        .arrow {
+            fill: #999;
+        }
+
+        .upload-button {
+            background-color: orange;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 17px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .dialogues-button {
+            background-color: orange;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        #slider-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 0;
+            width: 100%; 
+            z-index: 1000; 
+            border-radius: 5px;
+        }
+
+        #slider {
+            width: 60%; 
+            background-color: orange;
+            margin: 0 auto; 
+        }
+
+        #min-value, #max-value {
+            position: absolute;
+            top: -30px; 
+            font-size: 12px;
+            color: black;
+            width: 50px; 
+            text-align: center; 
+        }
+
+        #min-value {
+            left: 0;
+        }
+
+        #max-value {
+            right: 0;
+        }
+
+        .perc_label {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            overflow-y: auto; 
+            max-height: 200px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .dropdown-title {
+            font-weight: bold;
+            padding: 5px;
+            margin-bottom: 5px;
+            background-color: orange;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 120px;
+            height: auto;
+            padding: 5px;
+            font: 12px sans-serif;
+            background: lightgrey;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        #dialogue-id-dropdown option:hover {
+            background-color: lightgray;
+        }
+        
+        #dialogue-id-dropdown option:checked {
+            background-color: lightblue;
+        }
+
+    </style>
+</head>
+<body>
+       
+
+    <div id="main-content">
+
+        <div id="header">
+            <div id="slider-container">
+                <div id="threshold-title" style="font-family: 'Montserrat', sans-serif; text-align: center;">Probability Threshold</div>
+                <div id="slider"></div>
+                <span id="min-value">0</span>
+                <span id="max-value">100</span>
+                <br>
+                <span id="current-value" contenteditable="true">0 - 100</span>
+            </div>    
+        </div>
+        
+        <div id="container">
+            <div class="dataset-container">
+                <input type="file" id="fileInput" accept=".tsv" style="display: none;">
+                <button class="upload-button" onclick="window.location.href='sankey_diagram_v13.html'">Change to Sankey Diagram</button>
+                <button class="dialogues-button">Dialogues</button>
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search dialogues...">
+                </div>
+                <div class="dropdown" style="margin-top: 20px;">
+                    <div id="dialogue-id-dropdown" class="dropdown-content"></div>
+                </div>
+                <div id="associated-content" style="height: 210px; overflow-y: scroll;"></div>
+            </div>
+        
+            <div class="svg-container">
+                <svg></svg>
+                <div class="perc_label"></div>
+                <div id="tooltip" class="tooltip"></div>
+              
+            </div>
+        
+            <div class="buttons-container">
+                <button class="button button-orange" id="zoom-in-button">Zoom In</button>
+                <button class="button button-orange" id="zoom-out-button">Zoom Out</button>
+                <button class="button button-orange" id="screenshot-button">Take Screenshot</button>
+               
+                <button class="button button-orange" id="dialogue-acts-button">Node Groups</button>
+                <div id="dialogue-acts-dropdown" style="display: none;"></div>
+                <button class="button button-orange" id="sentiments-button">Color Labels</button>
+                <div id="sentiments-dropdown" style="display: none;"></div>
+                <button class="button button-orange" id="help-button">Help</button>
+                <div id="help-dropdown" style="display: none; height: 300px; overflow-y: auto;">
+                    <ul>
+                        <li>The nodes represent the dialogue acts of the messages in the dataset dialogues.</li>
+                        <img src="nodeexample.jpg" width="50%" height="50%">
+                        <li>The links between nodes represent the percentage flow of the dialogues between the dialogue acts.</li>
+                        <li>The node size represents the number of occurrences of each dialogue act.</li>
+                        <li>The node colors represent the highest percentage of sentiments for each dialogue act.</li>
+                    </ul>
+                </div>
+            </div>            
+        </div>
+    </div>
+    <script>
+
+    let line_lim;
+    let columnCol;  
+    let columnNod;  
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileData = localStorage.getItem('tsvFile');
+        line_lim = localStorage.getItem('lineLimit') ? parseInt(localStorage.getItem('lineLimit')) : 3001;
+
+        const selectedNodeColor = localStorage.getItem('selectedNodeColor');  
+        const selectedNodeMeaning = localStorage.getItem('selectedNodeMeaning');  
+
+        columnCol = selectedNodeColor ? parseInt(selectedNodeColor) : 4;   
+        columnNod = selectedNodeMeaning ? parseInt(selectedNodeMeaning) : 4;  
+
+        if (fileData) {
+            processData(fileData);
+            document.getElementById('main-content').style.display = 'block';
+        } else {
+            alert("No TSV file found. Please upload a file from the main page.");
+        }
+
+        console.log("Line limit: ", line_lim);
+        console.log("Node color column index: ", columnCol);
+        console.log("Node groups column index: ", columnNod);  
+    });
+     
+        
+        function processData(data) {
+            console.log("Line limit 1: ", line_lim);
+
+            const lines = data.split("\n").slice(1, line_lim); 
+            const nodes = [];
+            const links = [];
+            let startNode;
+            let endNode;
+            let startOccurrences = 0;
+            let undefinedActs = []; 
+
+         
+            lines.forEach((line, index) => {
+                console.log("Node color column index 1: ", columnCol);
+
+                const columns = line.split("\t");
+                const currentDialogueID = columns[0]; 
+                const dialogueAct = columns[columnNod];
+                const sentiment = columns[columnCol]; 
+
+                if (!dialogueAct) {
+                    undefinedActs.push(index + 1);
+                }
+
+                const existingNode = nodes.find(node => node.id === dialogueAct);
+                if (!existingNode) {
+                    const sentimentCounts = {};
+                    sentimentCounts[sentiment] = 1;
+                    nodes.push({ id: dialogueAct, occurrences: 1, sentimentCounts: sentimentCounts, character: dialogueAct });
+                } else {
+                    existingNode.occurrences++;
+                    if (existingNode.sentimentCounts[sentiment]) {
+                        existingNode.sentimentCounts[sentiment]++;
+                    } else {
+                        existingNode.sentimentCounts[sentiment] = 1;
+                    }
+                }
+
+                if (index < lines.length - 1) {
+                    const nextDialogueID = lines[index + 1].split("\t")[0]; 
+                    const nextDialogueAct = lines[index + 1].split("\t")[columnNod]; 
+                    if (currentDialogueID === nextDialogueID) {
+                        const link = links.find(link => link.source === dialogueAct && link.target === nextDialogueAct);
+                        if (link) {
+                            link.value++;
+                        } else {
+                            links.push({ source: dialogueAct, target: nextDialogueAct, value: 1 });
+                        }
+                    }
+                }
+
+                if (columns[1] === "0") {
+                    startOccurrences++;
+                }
+
+                if (columns[1] === "0") {
+                    startNode = { id: "START", occurrences: 1, color: "blue", character: "START" };
+                    links.push({ source: "START", target: dialogueAct, value: 1 });
+                } else if (index === lines.length - 1 || lines[index + 1].split("\t")[1] === "0") {
+                    endNode = { id: "END", occurrences: 1, color: "purple", character: "END" };
+                    links.push({ source: dialogueAct, target: "END", value: 1 });
+                }
+            });
+
+            const uniqueSentiments = new Set();
+            const sentimentColorMap = new Map();
+            const predefinedColors = ['violet', 'yellow', 'gray', 'cyan', 'magenta', 'brown', 'pink'];
+            let colorIndex = 0;
+
+            lines.forEach(line => {
+                const columns = line.split("\t");
+                if (columns.length >= 5) {
+                    const sentiment = columns[columnCol].trim(); 
+                    if (sentiment !== '') {
+                        uniqueSentiments.add(sentiment);
+                    }
+                }
+            });
+
+            nodes.forEach(node => {
+                const sentiment = Object.keys(node.sentimentCounts).reduce((a, b) => node.sentimentCounts[a] > node.sentimentCounts[b] ? a : b);
+                if (sentiment === 'Positive') {
+                    node.color = 'green';
+                } else if (sentiment === 'Negative') {
+                    node.color = 'red';
+                } else if (sentiment === 'Neutral') {
+                    node.color = 'orange';
+                } else {
+                    if (!sentimentColorMap.has(sentiment)) {
+                        if (colorIndex < predefinedColors.length) {
+                            sentimentColorMap.set(sentiment, predefinedColors[colorIndex]);
+                            colorIndex++;
+                        } else {
+                            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+                            sentimentColorMap.set(sentiment, randomColor);
+                        }
+                    }
+                    node.color = sentimentColorMap.get(sentiment);
+                }
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            const dropdown = document.getElementById('dialogue-id-dropdown');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim().toLowerCase();
+                const options = dropdown.getElementsByTagName('option');
+
+                for (let i = 0; i < options.length; i++) {
+                    const optionText = options[i].textContent.trim().toLowerCase();
+                    if (optionText.includes(searchTerm)) {
+                        options[i].style.display = 'block';
+                    } else {
+                        options[i].style.display = 'none';
+                    }
+                }
+            });
+
+            const dialogueDropdownContent = d3.select("#dialogue-id-dropdown");
+            const dialogueIdToText = new Map();
+            lines.forEach(line => {
+                const dialogueId = line.split("\t")[0];
+                const text = line.split("\t")[2];
+                if (!dialogueIdToText.has(dialogueId)) {
+                    dialogueIdToText.set(dialogueId, []);
+                }
+                dialogueIdToText.get(dialogueId).push(text);
+            });
+
+            dialogueIdToText.forEach((texts, dialogueId) => {
+                const option = dialogueDropdownContent.append("option")
+                    .attr("value", dialogueId)
+                    .text(`Dialogue ID: ${dialogueId}`);
+
+                option.on("click", () => {
+                    const isSelected = option.classed("button-blue");
+
+                    d3.selectAll("#dialogue-id-dropdown option")
+                        .style("color", "black")
+                        .style("font-weight", "normal");
+
+                    if (!isSelected) {
+                        option.style("color", "darkblue")
+                            .style("font-weight", "bold");
+
+                        d3.selectAll("#dialogue-id-dropdown option").classed("button-blue", false);
+
+                        option.classed("button-blue", true);
+
+                        d3.select("#associated-content").selectAll(".content").remove();
+
+                        const contentContainer = d3.select("#associated-content").append("div").classed("content", true);
+
+                        texts.forEach((text, index) => {
+                            const columns = lines.find(line => line.split("\t")[0] === dialogueId && line.split("\t")[2] === text).split("\t");
+                            const dialogueAct = columns[columnNod];
+                            const sentiment = columns[columnCol].trim(); 
+
+                            let backgroundColor = 'white'; 
+                            if (sentiment === 'Positive') {
+                                backgroundColor = 'lightgreen';
+                            } else if (sentiment === 'Negative') {
+                                backgroundColor = 'lightcoral';
+                            } else if (sentiment === 'Neutral') {
+                                backgroundColor = 'orange';
+                            } else {
+                                if (!sentimentColorMap.has(sentiment)) {
+                                    if (colorIndex < predefinedColors.length) {
+                                        sentimentColorMap.set(sentiment, predefinedColors[colorIndex]);
+                                        colorIndex++;
+                                    } else {
+                                        const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+                                        sentimentColorMap.set(sentiment, randomColor);
+                                    }
+                                }
+                                backgroundColor = sentimentColorMap.get(sentiment);
+                            }
+
+                            contentContainer.append("p")
+                                .html(`${text}, <b>Dialogue Act:</b> ${dialogueAct}`)
+                                .style("margin-left", "10px")
+                                .style("background-color", backgroundColor); 
+                        });
+
+
+                        highlightLinks(dialogueId);
+                    } else {
+                        option.style("color", "black")
+                            .style("font-weight", "normal");
+
+                        option.classed("button-blue", false);
+
+                        d3.select("#associated-content").selectAll(".content").remove();
+
+                        d3.selectAll(".link.highlighted-link[data-dialogue-id='" + dialogueId + "']").classed("highlighted-link", false);
+
+                        highlightLinks(false);
+                    }
+                });
+            });
+
+
+            function highlightLinks(dialogueId) {
+                d3.selectAll(".link")
+                    .attr("stroke", "#999")
+                    .attr("stroke-width", d => d.probability * 8)
+                    .attr("opacity", 0.6);
+
+                d3.selectAll(".link")
+                    .filter(d => {
+                        const sourceDialogueId = d.source.id;
+                        const targetDialogueId = d.target.id;
+                        const isSelfReferential = sourceDialogueId === targetDialogueId;
+                        const isInSelectedDialogue = lines.find(line => line.split("\t")[0] === dialogueId && (line.split("\t")[columnNod] === sourceDialogueId || line.split("\t")[columnNod] === targetDialogueId));
+                        return isSelfReferential && isInSelectedDialogue;
+                    })
+                    .attr("stroke", "darkblue")
+                    .attr("stroke-width", d => 6)
+                    .attr("opacity", 1);
+
+                d3.selectAll(".link")
+                    .filter(d => {
+                        const sourceDialogueId = d.source.id;
+                        const targetDialogueId = d.target.id;
+                        const isTransitionLink = sourceDialogueId !== targetDialogueId && sourceDialogueId !== 'START' && targetDialogueId !== 'END';
+                        const sourceInSelectedDialogue = lines.find(line => line.split("\t")[0] === dialogueId && line.split("\t")[columnNod] === sourceDialogueId);
+                        const targetInSelectedDialogue = lines.find(line => line.split("\t")[0] === dialogueId && line.split("\t")[columnNod] === targetDialogueId);
+                        return isTransitionLink && sourceInSelectedDialogue && targetInSelectedDialogue;
+                    })
+                    .attr("stroke", "darkblue")
+                    .attr("stroke-width", d => 6)
+                    .attr("opacity", 1);
+
+                const firstDialogueAct = lines.find(line => line.split("\t")[0] === dialogueId);
+                const firstDialogueActId = firstDialogueAct ? firstDialogueAct.split("\t")[columnNod] : null;
+
+                const lastDialogueAct = lines.reverse().find(line => line.split("\t")[0] === dialogueId);
+                const lastDialogueActId = lastDialogueAct ? lastDialogueAct.split("\t")[columnNod] : null;
+
+                const startLink = d3.selectAll(".link")
+                    .filter(d => d.source.id === 'START' && d.target.id === firstDialogueActId);
+
+                if (!startLink.empty()) {
+                    startLink.attr("stroke", "darkblue") 
+                        .attr("stroke-width", d => 6) 
+                        .attr("opacity", 1);
+                }
+
+                const endLink = d3.selectAll(".link")
+                    .filter(d => d.target.id === 'END' && d.source.id === lastDialogueActId);
+
+                if (!endLink.empty()) {
+                    endLink.attr("stroke", "darkblue") 
+                        .attr("stroke-width", d => 6) 
+                        .attr("opacity", 1);
+                }
+            }
+
+        const linkedNodes = new Set();
+        links.forEach(link => {
+            linkedNodes.add(link.source);
+            linkedNodes.add(link.target);
+        });
+        const isolatedNodes = nodes.filter(node => !linkedNodes.has(node.id));
+
+        isolatedNodes.forEach(node => {
+            const index = nodes.findIndex(n => n.id === node.id);
+            nodes.splice(index, 1);
+        });
+
+        if (!nodes.find(node => node.id === "START")) {
+            nodes.push(startNode);
+        }
+        if (!nodes.find(node => node.id === "END")) {
+            nodes.push(endNode);
+        }
+
+        links.forEach(link => {
+            const sourceNode = nodes.find(node => node.id === link.source);
+            link.probability = link.value / sourceNode.occurrences;
+        });
+
+        links.forEach(link => {
+            if (link.source === "START") {
+                link.probability = link.value / startOccurrences;
+            }
+        });
+
+        const svgWidth = 750;
+        const svgHeight = 900;
+
+        const margin = 20;
+        
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(svgWidth / 2, svgHeight / 2))
+            .force("collide", d3.forceCollide().radius(d => Math.sqrt(d.occurrences) * 10))
+            .force("x", d3.forceX().x(d => Math.min(svgWidth - margin, Math.max(margin, d.x))))
+            .force("y", d3.forceY().y(d => Math.min(svgHeight - margin, Math.max(margin, d.y))));
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 3]) 
+            .on("zoom", (event) => {
+                svgGroup.attr("transform", event.transform);
+        });
+        
+        const svg = d3.select("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .call(zoom);
+            
+        const svgGroup = svg.append("g");
+
+        document.getElementById("zoom-in-button").addEventListener("click", () => {
+            svg.transition().duration(750).call(zoom.scaleBy, 1.2); 
+        });
+
+        document.getElementById("zoom-out-button").addEventListener("click", () => {
+            svg.transition().duration(750).call(zoom.scaleBy, 0.8); 
+        });
+                
+        const tooltip = d3.select("#tooltip");
+                   
+    const defs = svg.append("defs");
+
+    defs.append("marker")
+        .attr("id", "arrow")
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 8)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("class", "arrow")
+        .attr("d", "M0,-5L10,0L0,5");
+
+    const link = svgGroup.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("stroke", "#999")
+        .attr("stroke-width", d => d.probability * 8)
+        .attr("fill", "none")
+        .attr("opacity", 0.6)
+        .attr("marker-end", "url(#arrow)")
+
+        .on("mouseover", function(event, d) {
+            d3.select(this)
+                .attr("stroke-width", 6); 
+            const perc_label = d3.select(".perc_label");
+            perc_label.html(`Probability: ${Math.round(d.probability * 100)}%`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY + 10) + "px") 
+                .transition()
+                .duration(200)
+                .style("opacity", 1);
+        })
+        .on("mouseout", function() { 
+            d3.select(this)
+                .attr("stroke-width", d => d.probability * 10); 
+            d3.select(".perc_label")
+                .transition()
+                .duration(200)
+                .style("opacity", 0);
+        });
+        
+        const nodeGroup = svgGroup.selectAll(".node")
+            .data(nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .style("fill", d => {
+                if (d.color) {
+                    return d.color; 
+                } else {
+                    return 'gray'; 
+                }
+            })
+            .on("mouseover", function(event, d) {
+                const totalSentiments = Object.values(d.sentimentCounts).reduce((a, b) => a + b, 0);
+                let sentimentData = [];
+                let sentimentColors = [];
+                let tooltipContent = "";
+
+                uniqueSentiments.forEach(sentiment => {
+                    const count = d.sentimentCounts[sentiment] || 0;
+                    const percentage = totalSentiments > 0 ? ((count / totalSentiments) * 100).toFixed(2) : 0;
+
+                    if (percentage > 0) {
+                        sentimentData.push(count);
+                        tooltipContent += `${sentiment}: ${percentage}%<br/>`;
+
+                        if (sentiment === 'Positive') {
+                            sentimentColors.push('green');
+                        } else if (sentiment === 'Negative') {
+                            sentimentColors.push('red');
+                        } else if (sentiment === 'Neutral') {
+                            sentimentColors.push('orange');
+                        } else {
+                            sentimentColors.push(sentimentColorMap.get(sentiment));
+                        }
+                    }
+                });
+
+                d3.select("#pieChartContainer").remove();
+
+                const pieChartContainer = d3.select("body").append("div")
+                    .attr("id", "pieChartContainer")
+                    .style("position", "absolute")
+                    .style("left", (event.pageX + 70) + "px")
+                    .style("top", (event.pageY - 75) + "px")
+                    .style("width", "150px")
+                    .style("height", "150px");
+
+                pieChartContainer.append("canvas")
+                    .attr("id", "pieChart")
+                    .style("width", "100%")
+                    .style("height", "100%");
+
+                new Chart("pieChart", {
+                    type: "pie",
+                    data: {
+                        datasets: [{
+                            backgroundColor: sentimentColors,
+                            data: sentimentData
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: {
+                            display: false
+                        },
+                        tooltips: {
+                            enabled: false
+                        }
+                    }
+                });
+
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html(tooltipContent)
+                    .style("left", (event.pageX) + "px")
+                    .style("top", (event.pageY) + "px");
+            })
+            .on("mouseout", function(d) {
+                d3.select("#pieChartContainer").remove();
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        const minNodeRadius = 20;
+
+        const node = nodeGroup.append("circle")
+            .attr("r", d => Math.max(minNodeRadius, Math.sqrt(d.occurrences) * 4));
+
+        const nodeText = nodeGroup.append("text")
+            .attr("class", "nodeText")
+            .text(d => d.character)
+            .style("font-size", d => `${getFontSize(Math.sqrt(d.occurrences) * 4)}px`)
+            .attr("dy", "0.35em") 
+            .style("pointer-events", "none")
+            .style("fill", d => (d.id === "START" || d.id === "END") ? "white" : "black");
+
+        
+            simulation.on("tick", () => {
+                link.attr("d", d => {
+                    if (d.source === d.target) {
+                        const angle = Math.atan2(d.target.y - d.source.y, d.target.x - d.source.x);
+                        const rx = Math.sqrt(d.source.occurrences) * 4 + 10;
+                        const ry = Math.sqrt(d.source.occurrences) * 4 + 10;
+                        const sourceX = d.source.x + Math.cos(angle) * rx;
+                        const sourceY = d.source.y + Math.sin(angle) * ry;
+                        const targetX = d.target.x - Math.cos(angle) * rx;
+                        const targetY = d.target.y - Math.sin(angle) * ry;
+                        return `M${sourceX},${sourceY}A${rx},${ry} 0 1,1 ${targetX},${targetY}A${rx},${ry} 0 1,1 ${sourceX},${sourceY}`;
+                    } else {
+                        const isOppositeLink = links.some(link => link.source === d.target && link.target === d.source);
+
+                        if (isOppositeLink) {
+
+                        const gap = 20; 
+
+                        const sourceX = d.source.x;
+                        const sourceY = d.source.y;
+                        const targetX = d.target.x;
+                        const targetY = d.target.y;
+
+                        const dx = targetX - sourceX;
+                        const dy = targetY - sourceY;
+                        const dr = Math.sqrt(dx * dx + dy * dy); 
+
+                        const midX = (sourceX + targetX) / 2;
+                        const midY = (sourceY + targetY) / 2;
+
+                        const unitVectorX = dx / dr;
+                        const unitVectorY = dy / dr;
+
+                        const offsetSourceX = sourceX + unitVectorX * gap;
+                        const offsetSourceY = sourceY + unitVectorY * gap;
+                        const offsetTargetX = targetX - unitVectorX * gap; 
+                        const offsetTargetY = targetY - unitVectorY * gap; 
+
+                        const controlX = midX + unitVectorY * gap;
+                        const controlY = midY - unitVectorX * gap;
+
+                        return `M${offsetSourceX},${offsetSourceY}Q${controlX},${controlY},${offsetTargetX},${offsetTargetY}`;
+
+
+                        } else {
+                            const dx = d.target.x - d.source.x;
+                            const dy = d.target.y - d.source.y;
+                            const angle = Math.atan2(dy, dx);
+                            const sourceX = d.source.x + Math.cos(angle) * (Math.sqrt(d.source.occurrences) * 3);
+                            const sourceY = d.source.y + Math.sin(angle) * (Math.sqrt(d.source.occurrences) * 3);
+                            const targetX = d.target.x - Math.cos(angle) * (Math.sqrt(d.target.occurrences) * 4.5);
+                            const targetY = d.target.y - Math.sin(angle) * (Math.sqrt(d.target.occurrences) * 4.5);
+                            return `M${sourceX},${sourceY}L${targetX},${targetY}`;
+                        }
+                    }
+                });
+
+                    node.attr("transform", d => `translate(${d.x},${d.y})`);
+
+                    nodeText.attr("x", d => d.x)
+                        .attr("y", d => d.y)
+                        .style("font-size", d => `${getFontSize(Math.sqrt(d.occurrences) * 3)}px`);
+                })
+
+                const slider = document.getElementById('slider');
+                const minValue = document.getElementById("min-value");
+                const maxValue = document.getElementById("max-value");
+                const currentValue = document.getElementById("current-value");
+
+                noUiSlider.create(slider, {
+                    start: [0, 100],
+                    connect: true,
+                    range: {
+                        'min': 0,
+                        'max': 100
+                    }
+                });
+
+                slider.noUiSlider.on('update', function (values, handle) {
+                    const handle0 = document.querySelector('.noUi-handle-lower');
+                    const handle0Rect = handle0.getBoundingClientRect();
+                    minValue.style.left = `${handle0Rect.left}px`;
+
+                    const handle1 = document.querySelector('.noUi-handle-upper');
+                    const handle1Rect = handle1.getBoundingClientRect();
+                    maxValue.style.left = `${handle1Rect.left}px`;
+
+                    if (handle === 0) {
+                        minValue.textContent = values[0];
+                    } else {
+                        maxValue.textContent = values[1];
+                    }
+                    currentValue.textContent = values.join(' - ');
+
+                    handle0.setAttribute('aria-valuetext', values[0]);
+                    handle1.setAttribute('aria-valuetext', values[1]);
+                });
+
+                currentValue.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();  
+                        const values = currentValue.textContent.split(' - ').map(value => parseFloat(value.trim()));
+                        if (values.length === 2 && !isNaN(values[0]) && !isNaN(values[1])) {
+                            slider.noUiSlider.set(values);
+                            updateLinksOpacity(); 
+                        } else {
+                            alert('Please enter valid numbers"');
+                        }
+                    }
+                });
+
+                slider.noUiSlider.on('change', updateLinksOpacity);
+
+            function updateLinksOpacity() {
+                const minValue = parseInt(slider.noUiSlider.get()[0]) / 100;
+                const maxValue = parseInt(slider.noUiSlider.get()[1]) / 100;
+
+                link.style("stroke", "#999");
+
+                link.style("opacity", d => d.probability >= minValue && d.probability <= maxValue ? 1 : 0.1);
+
+                node.style("opacity", function(d) {
+                    const connectedLinks = links.filter(link => link.source.id === d.id || link.target.id === d.id);
+                    const isVisible = connectedLinks.some(link => link.probability >= minValue && link.probability <= maxValue);
+                    return isVisible ? 1 : 0.1;
+                });
+
+                nodeText.style("opacity", function(d) {
+                    const connectedLinks = links.filter(link => link.source.id === d.id || link.target.id === d.id);
+                    const isVisible = connectedLinks.some(link => link.probability >= minValue && link.probability <= maxValue);
+                    return isVisible ? 1 : 0.1;
+                });
+            }
+
+            function getFontSize(radius) {
+                return Math.max(8, radius / 2); 
+            }
+
+            
+            //Dialogue Acts Dropdown
+            const dialogueActsButton = document.getElementById("dialogue-acts-button");
+            const dialogueActsDropdown = document.getElementById("dialogue-acts-dropdown");
+
+            dialogueActsButton.addEventListener("click", function() {
+                if (dialogueActsDropdown.style.display === "none") {
+                    dialogueActsDropdown.style.display = "block";
+                    dialogueActsDropdown.style.height = "200px"; 
+                    dialogueActsDropdown.style.overflowY = "auto"; 
+                } else {
+                    dialogueActsDropdown.style.display = "none";
+                }
+            });
+
+            let selectedNode = null;
+            let selectedDialogueAct = null; 
+
+            nodes.forEach(node => {
+                if (node.id !== 'START' && node.id !== 'END') {
+                    const button = document.createElement("button");
+                    button.textContent = node.id;
+                    button.classList.add("button");
+                    button.classList.add("button-gray");
+
+                    button.addEventListener("click", function() {
+                        const isSelected = selectedNode === node.id;
+                        selectedNode = isSelected ? null : node.id;
+
+                        svg.selectAll(".node").selectAll("circle, text")
+                            .style("opacity", d => {
+                                if (d.id === 'START' || d.id === 'END' || (selectedNode && d.id === selectedNode)) {
+                                    return 1;
+                                } else if (selectedNode) {
+                                    return 0.3;
+                                } else {
+                                    return 1;
+                                }
+                            });
+
+                        svg.selectAll(".link")
+                            .style("opacity", d => {
+                                if (selectedNode) {
+                                    return d.source.id === selectedNode || d.target.id === selectedNode ? 1 : 0.1;
+                                } else {
+                                    return 1;
+                                }
+                            });
+
+                        const matchingLines = lines.filter(line => line.split("\t")[columnNod] === node.id);
+                        
+                        d3.select("#associated-content").selectAll(".content").remove();
+                        const contentContainer = d3.select("#associated-content").append("div").classed("content", true);
+
+                        matchingLines.forEach(line => {
+                            const columns = line.split("\t");
+                            const text = columns[2]; 
+                            const dialogueAct = columns[columnNod]; 
+                            const sentiment = columns[columnCol]; 
+
+                            let backgroundColor = 'white';
+                            if (sentiment === 'Positive') {
+                                backgroundColor = 'lightgreen';
+                            } else if (sentiment === 'Negative') {
+                                backgroundColor = 'lightcoral';
+                            } else if (sentiment === 'Neutral') {
+                                backgroundColor = 'orange';
+                            } else {
+                                if (!sentimentColorMap.has(sentiment)) {
+                                    if (colorIndex < predefinedColors.length) {
+                                        sentimentColorMap.set(sentiment, predefinedColors[colorIndex]);
+                                        colorIndex++;
+                                    } else {
+                                        const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+                                        sentimentColorMap.set(sentiment, randomColor);
+                                    }
+                                }
+                                backgroundColor = sentimentColorMap.get(sentiment);
+                            }
+
+                            contentContainer.append("p")
+                                .html(`${text}, <b>Dialogue Act:</b> ${dialogueAct}, <b>Sentiment:</b> ${sentiment}`)
+                                .style("margin-left", "10px")
+                                .style("background-color", backgroundColor);
+                        });
+                    });
+
+                    dialogueActsDropdown.appendChild(button);
+                }
+            });
+
+            //Dialogue Acts Dropdown
+
+            const sentimentsButton = document.getElementById("sentiments-button");
+            const sentimentsDropdown = document.getElementById("sentiments-dropdown");
+            let selectedSentiment = null;
+
+            sentimentsButton.addEventListener("click", function() {
+                if (sentimentsDropdown.style.display === "none") {
+                    sentimentsDropdown.style.display = "block";
+                } else {
+                    sentimentsDropdown.style.display = "none";
+                }
+            });
+
+            const helpButton = document.getElementById("help-button");
+            const helpDropdown = document.getElementById("help-dropdown");
+
+            helpButton.addEventListener("click", function() {
+                if (helpDropdown.style.display === "none") {
+                    helpDropdown.style.display = "block";
+                } else {
+                    helpDropdown.style.display = "none";
+                }
+            });
+
+            uniqueSentiments.forEach(sentiment => {
+                const button = document.createElement("button");
+                button.textContent = sentiment;
+                button.classList.add("button");
+                button.classList.add("button-dropdown");
+
+                // button color
+                if (sentiment === 'Positive') {
+                    button.style.backgroundColor = 'green';
+                } else if (sentiment === 'Negative') {
+                    button.style.backgroundColor = 'red';
+                } else if (sentiment === 'Neutral') {
+                    button.style.backgroundColor = 'orange';
+                } else {
+                    if (!sentimentColorMap.has(sentiment)) {
+                        if (colorIndex < predefinedColors.length) {
+                            sentimentColorMap.set(sentiment, predefinedColors[colorIndex]);
+                            colorIndex++;
+                        } else {
+                            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+                            sentimentColorMap.set(sentiment, randomColor);
+                        }
+                    }
+                    button.style.backgroundColor = sentimentColorMap.get(sentiment);
+                }
+
+                button.addEventListener("click", function() {
+                    selectedSentiment = selectedSentiment === sentiment ? null : sentiment;
+
+                    svg.selectAll(".node")
+                        .selectAll("circle, text")
+                        .style("opacity", d => {
+                            if (d.id === 'START' || d.id === 'END') {
+                                return 1;
+                            } else if (!selectedSentiment) {
+                                return 1;
+                            } else if (selectedSentiment === 'Neutral') {
+                                return d.color === 'orange' ? 1 : 0.3; 
+                            } else if (d.color === (selectedSentiment === 'Positive' ? 'green' : 'red')) {
+                                return 1;
+                            } else {
+                                return 0.3; 
+                            }
+                        });
+
+                    svg.selectAll(".link")
+                        .style("opacity", d => {
+                            if (!selectedSentiment) {
+                                return 1;
+                            } else if (selectedNode) {
+                                return d.source.id === selectedNode || d.target.id === selectedNode ? 1 : 0.1;
+                            } else if (selectedSentiment === 'Neutral') {
+                                return d.source.color === 'orange' || d.target.color === 'orange' ? 1 : 0.1;
+                            } else {
+                                return d.source.color === (selectedSentiment === 'Positive' ? 'green' : 'red') || d.target.color === (selectedSentiment === 'Positive' ? 'green' : 'red') ? 1 : 0.1;
+                            }
+                        });
+                });
+
+                sentimentsDropdown.appendChild(button);
+            });
+
+            const drag = simulation => {
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+                }
+
+                function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+                }
+
+                function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+                }
+
+                return d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended);
+                }
+
+                node.call(drag(simulation));
+
+                simulation.force("x", d3.forceX().strength(0.1));
+                simulation.force("y", d3.forceY().strength(0.1));
+
+
+            function downloadSvg() {
+                const svgElement = document.querySelector("svg");
+                const serializer = new XMLSerializer();
+                let svgString = serializer.serializeToString(svgElement);
+
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+
+                const svgWidth = svgElement.getAttribute("width");
+                const svgHeight = svgElement.getAttribute("height");
+                canvas.width = svgWidth;
+                canvas.height = svgHeight;
+
+                context.fillStyle = "white";
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const img = new Image();
+                const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+                const url = URL.createObjectURL(svgBlob);
+
+                img.onload = function() {
+                    context.drawImage(img, 0, 0);
+
+                    const jpgLink = document.createElement("a");
+                    jpgLink.href = canvas.toDataURL("image/jpeg");
+                    jpgLink.download = "graph_screenshot.jpeg";
+                    jpgLink.click();
+
+                };
+
+                img.src = url;
+            }
+
+            document.getElementById("screenshot-button").addEventListener("click", downloadSvg);
+
+
+            
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/nouislider/distribute/nouislider.min.js"></script>
+</body>
+</html>

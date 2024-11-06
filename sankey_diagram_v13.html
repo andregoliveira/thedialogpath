@@ -898,7 +898,7 @@ Object.keys(dialogueIds).forEach(function(dialogueId) {
         associatedContent.innerHTML = "";
 
         dialogueIds[dialogueId].forEach(dialogue => {
-            var dialogueText = dialogue.message + " <strong>Dialogue Act:</strong> " + dialogue.dialogueAct;
+            var dialogueText = dialogue.message + ", <b>" + nodeColIndex  + ":</b> " + dialogue.dialogueAct + ", <b>" + colorColIndex  + ":</b> " + dialogue.sentiment;
             var p = document.createElement("p");
             p.innerHTML = dialogueText;
             if (mainEmotions[dialogue.sentiment]) {

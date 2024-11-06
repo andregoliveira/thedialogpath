@@ -378,6 +378,8 @@
     let line_lim;
     let columnCol;  
     let columnNod;  
+    let colorColIndex;
+    let nodeColIndex;
 
     document.addEventListener('DOMContentLoaded', function() {
         const fileData = localStorage.getItem('tsvFile');
@@ -403,9 +405,15 @@
      
         
         function processData(data) {
-            console.log("Line limit 1: ", line_lim);
+            const lines_header = data.split("\n").slice(0, line_lim); 
+            const firstLineColumns = lines_header[0].split("\t");
+            nodeColIndex = firstLineColumns[columnNod];  
+            colorColIndex = firstLineColumns[columnCol]; 
+        
 
-            const lines = data.split("\n").slice(1, line_lim); 
+            const lines = data.split("\n").slice(1, line_lim);
+
+
             const nodes = [];
             const links = [];
             let startNode;
@@ -581,7 +589,7 @@
                             }
 
                             contentContainer.append("p")
-                                .html(`${text}, <b>Dialogue Act:</b> ${dialogueAct}`)
+                                .html(`${text}, <b>${nodeColIndex}</b>: ${dialogueAct}, <b>${colorColIndex}</b>: ${sentiment}`)
                                 .style("margin-left", "10px")
                                 .style("background-color", backgroundColor); 
                         });
@@ -1090,7 +1098,7 @@
                             }
 
                             contentContainer.append("p")
-                                .html(`${text}, <b>Dialogue Act:</b> ${dialogueAct}, <b>Sentiment:</b> ${sentiment}`)
+                                .html(`${text}, <b>${nodeColIndex}</b>: ${dialogueAct}, <b>${colorColIndex}</b>: ${sentiment}`)
                                 .style("margin-left", "10px")
                                 .style("background-color", backgroundColor);
                         });

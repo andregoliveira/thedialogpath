@@ -823,8 +823,8 @@
                     .style("position", "absolute")
                     .style("left", (event.pageX + 70) + "px")
                     .style("top", (event.pageY - 75) + "px")
-                    .style("width", "150px")
-                    .style("height", "150px");
+                    .style("width", "200px")        
+                    .style("height", "150px");      
 
                 pieChartContainer.append("canvas")
                     .attr("id", "pieChart")
@@ -851,12 +851,40 @@
                     }
                 });
 
+                // Tooltip logic
                 tooltip.transition()
                     .duration(200)
                     .style("opacity", .9);
                 tooltip.html(tooltipContent)
                     .style("left", (event.pageX) + "px")
-                    .style("top", (event.pageY) + "px");
+                    .style("top", (event.pageY) + "px")
+                    .style("width", "200px")        
+                    .style("height", "150px")       
+                    .style("overflow-y", "auto")    
+                    .style("overflow-x", "auto")    
+                    .style("position", "absolute");
+
+                const tooltipElement = tooltip.node();
+                tooltipElement.setAttribute("tabindex", "-1"); 
+
+                tooltipElement.addEventListener("keydown", function(event) {
+                    if (event.key === "ArrowDown") {
+                        tooltipElement.scrollTop += 10;
+                        event.preventDefault(); 
+                    } else if (event.key === "ArrowUp") {
+                        tooltipElement.scrollTop -= 10; 
+                        event.preventDefault(); 
+                    } else if (event.key === "ArrowRight") {
+                        tooltipElement.scrollLeft += 10;
+                        event.preventDefault();
+                    } else if (event.key === "ArrowLeft") {
+                        tooltipElement.scrollLeft -= 10;
+                        event.preventDefault(); 
+                    }
+                });
+
+                tooltipElement.focus(); 
+
             })
             .on("mouseout", function(d) {
                 d3.select("#pieChartContainer").remove();
@@ -1117,6 +1145,8 @@
             sentimentsButton.addEventListener("click", function() {
                 if (sentimentsDropdown.style.display === "none") {
                     sentimentsDropdown.style.display = "block";
+                    sentimentsDropdown.style.height = "200px"; 
+                    sentimentsDropdown.style.overflowY = "auto"; 
                 } else {
                     sentimentsDropdown.style.display = "none";
                 }
